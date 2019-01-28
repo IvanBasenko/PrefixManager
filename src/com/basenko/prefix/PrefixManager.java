@@ -6,11 +6,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Scanner;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class PrefixManager {
@@ -38,11 +37,17 @@ public class PrefixManager {
 
         for (int i = 0; i < fileContent.size(); i++) {
             String line = fileContent.get(i);
-            ArrayList<String> words = getWords(line);
-            for (String word : words) {
-                if (line.contains(word)) {
-                    line = line.replace(word, prefix + word);
-                }
+            Map<String, Integer> words =
+                    getWords(line).entrySet().stream()
+                            .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                            .collect(Collectors.toMap(
+                                    Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
+
+            for (String word : words.keySet()) {
+                Integer tempIndex = words.get(word);
+                StringBuilder aStringBuilder = new StringBuilder(line);
+                aStringBuilder.replace(tempIndex, tempIndex + word.length(), prefix + word);
+                line = aStringBuilder.toString();
             }
             fileContent.set(i, line);
         }
@@ -50,13 +55,13 @@ public class PrefixManager {
         Files.write(p, fileContent, StandardCharsets.UTF_8);
     }
 
-    private static ArrayList<String> getWords(String sentence) {
-        HashSet<String> words = new HashSet<>();
+    private static HashMap<String, Integer> getWords(String sentence) {
+        HashMap<String, Integer> words = new HashMap<>();
         String wordPattern = "(\\w*__c\\b|\\w*__r\\b)";
         Matcher m = Pattern.compile(wordPattern).matcher(sentence);
         while (m.find()) {
-            words.add(m.group());
+            words.put(m.group(), m.start());
         }
-        return new ArrayList<>(words);
+        return words;
     }
 }
