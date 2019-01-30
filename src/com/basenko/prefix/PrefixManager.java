@@ -37,16 +37,16 @@ public class PrefixManager {
 
         for (int i = 0; i < fileContent.size(); i++) {
             String line = fileContent.get(i);
-            Map<String, Integer> words =
+            Map<Integer, String> words =
                     getWords(line).entrySet().stream()
-                            .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                            .sorted(Map.Entry.comparingByKey(Comparator.reverseOrder()))
                             .collect(Collectors.toMap(
                                     Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
 
-            for (String word : words.keySet()) {
-                Integer tempIndex = words.get(word);
+            for (Integer index : words.keySet()) {
+                String tempWord = words.get(index);
                 StringBuilder aStringBuilder = new StringBuilder(line);
-                aStringBuilder.replace(tempIndex, tempIndex + word.length(), prefix + word);
+                aStringBuilder.replace(index, index + tempWord.length(), prefix + tempWord);
                 line = aStringBuilder.toString();
             }
             fileContent.set(i, line);
@@ -55,12 +55,12 @@ public class PrefixManager {
         Files.write(p, fileContent, StandardCharsets.UTF_8);
     }
 
-    private static HashMap<String, Integer> getWords(String sentence) {
-        HashMap<String, Integer> words = new HashMap<>();
+    private static HashMap<Integer, String> getWords(String sentence) {
+        HashMap<Integer, String> words = new HashMap<>();
         String wordPattern = "(\\w*__c\\b|\\w*__r\\b)";
         Matcher m = Pattern.compile(wordPattern).matcher(sentence);
         while (m.find()) {
-            words.put(m.group(), m.start());
+            words.put(m.start(), m.group());
         }
         return words;
     }
